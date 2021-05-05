@@ -15,149 +15,100 @@ sqlite3 *Database::Connect(const string &path) {
     return db;
   }
 }
-int Database::Callback(void *context, int columnCount, char **columnValues, char **columnName) {
 
-  for (int i = 0; i < columnCount; i++) {
-    cout << columnValues[i] << " ";
-  }
-  cout << endl;
-
-  return 0;
-}
 void Database::Insert(sqlite3 *db, const Filmas &filmas) {
 
   sqlite3_stmt *statment;
-  string sql;
-  sql = "insert into Filmas VALUES (?,?,?,?,?)";
+  string sql = "insert into Filmas VALUES (?,?,?,?,?)";
 
-  if (sqlite3_prepare_v2(db,
-                         sql.c_str(),
-                         -1,
-                         &statment,nullptr)!= SQLITE_OK) {
-    cout << "SOrry not working!"<< endl;
+  if (sqlite3_prepare_v2(db, sql.c_str(), -1, &statment, nullptr) != SQLITE_OK) {
+    cout << "SOrry not working! Gali buti duomenu bazes Connection blogas arba neegzistuoja!" << endl;
+    return;
   }
-
-
-  // insert into Filmas VALUES (null,?,?,?)
   if (sqlite3_bind_null(statment, 1) != SQLITE_OK) {
-    //printf("\nCould not bind double.\n");
     cout << "\nCould not bind null.\n";
     return;
   }
-
-  // insert into Filmas VALUES (null,"Taxi",?,?)
-  if (sqlite3_bind_text(
-      statment,
-      2,  // Index of wildcard
-      filmas.GetPavadinimas().c_str(), // Data as -> const * char
-      filmas.GetPavadinimas().length(), // Data length
-      SQLITE_STATIC
-  ) != SQLITE_OK) {
+  if (sqlite3_bind_text(statment, 2, filmas.GetPavadinimas().c_str(), filmas.GetPavadinimas().length(),
+                        SQLITE_STATIC) != SQLITE_OK) {
     cout << "\nCould not bind text.\n";
     return;
   }
-
-  // insert into Filmas VALUES (null,"Taxi","Drama",?)
-  if (sqlite3_bind_text(
-      statment,
-      3,  // Index of wildcard
-      filmas.GetZanras().c_str(), // Data as -> const * char
-      filmas.GetZanras().length(), // Data length
-      SQLITE_STATIC
-  ) != SQLITE_OK) {
+  if (sqlite3_bind_text(statment, 3, filmas.GetZanras().c_str(), filmas.GetZanras().length(), SQLITE_STATIC) !=
+      SQLITE_OK) {
     cout << "\nCould not bind text.\n";
     return;
   }
-
-  if (sqlite3_bind_int(
-      statment,
-      4,  // Index of wildcard
-      filmas.GetMetai()
-  ) != SQLITE_OK) {
-    printf("\nCould not bind int.\n");
+  if (sqlite3_bind_int(statment, 4, filmas.GetMetai()) != SQLITE_OK) {
+    cout << "\nCould not bind int.\n";
     return;
   }
-
-  if (sqlite3_bind_double(
-      statment,
-      5,  // Index of wildcard
-      filmas.GetReitingas()
-  ) != SQLITE_OK) {
-    printf("\nCould not bind double.\n");
+  if (sqlite3_bind_double(statment, 5, filmas.GetReitingas()) != SQLITE_OK) {
+    cout << "\nCould not bind double.\n";
     return;
   }
-
   if (sqlite3_step(statment) != SQLITE_DONE) {
-    printf("\nCould not step (execute) stmt.\n");
+    cout << "\nnCould not step (execute) stmt.\n";
     return;
   }
-
-  printf("\n");
-  //select_stmt("select * from foo");
-
+  cout << "\n";
+  sqlite3_finalize(statment);
   sqlite3_close(db);
 }
 
-void Database::Display(sqlite3 *db) {
-  char *zErrMsg = nullptr;
-  const char *data = "Callback function called";
-
-  /* Create SQL statement */
-  string sql = "SELECT * from Filmas";
-
-  // boolean true -> 1, false -> 0 nera c kalboj naudojo int 0,1
-
-  /* Execute SQL statement */
-  int rc = sqlite3_exec(db, sql.c_str(), Callback, (void *) data, &zErrMsg);
-
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  } else {
-    fprintf(stdout, "Operation done successfully\n");
-  }
-}
-
-void Database::DisplayByName(sqlite3 *db, string name) {
-
-  char *zErrMsg = nullptr;
-  const char *data = "Callback function called";
+vector<Filmas> Database::DisplayByName(sqlite3 *db, string name) {
   sqlite3_stmt *res;
-  string sql = "select pavadinimas, zanras, metai, reitingas from Filmas where pavadinimas==?";
+  string sql = "select * from Filmas where pavadinimas==?";
 
   int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &res, 0);
 
   if (rc == SQLITE_OK) {
     sqlite3_bind_text(res, 1, name.c_str(), name.length(), SQLITE_STATIC);
   } else {
-    fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+    cout << "Failed to execute: " << sqlite3_errmsg(db) << endl;
   }
 
-  int step = sqlite3_step(res);
+  vector<Filmas> filmai; // laikinas sąrašas duomenims
 
-  if (step == SQLITE_ROW) {
+  // Skaitomi duomenu bazės įrašai
+  while ((rc = sqlite3_step(res)) != SQLITE_DONE) {
+    // Konvertuojame duomenu bazės grąžinamą reikšmę
+    // 'unsigned const char*' į string tipą
+    basic_string<unsigned char> col1 = sqlite3_column_text(res, 1);
+    basic_string<unsigned char> col2 = sqlite3_column_text(res, 2);
+    string pavadinimas(col1.begin(), col1.end());
+    string zanras(col2.begin(), col2.end());
 
-    cout << sqlite3_column_text(res, 0) << " pavadinimas"<< endl;
-    cout << sqlite3_column_text(res, 1) << " zanras"<< endl;
-    cout << sqlite3_column_int(res, 2) << " metai"<< endl;
-    cout << sqlite3_column_double(res, 3) << " reitingas"<< endl;
+    int metai = sqlite3_column_int(res, 3);
+    double reitingas = sqlite3_column_double(res, 4);
+    int id = sqlite3_column_int(res, 0);
+    //------------------------------------------------------
 
+    Filmas filmas(pavadinimas, zanras, metai, reitingas, id);
+    filmai.emplace_back(filmas);
   }
-
   sqlite3_finalize(res);
   sqlite3_close(db);
 
-
-
-
-
-
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  } else {
-    fprintf(stdout, "Operation done successfully\n");
-  }
+  return filmai;
 }
 
-// select pavadinimas, zanras, metai, reitingas from Filmas where pavadinimas=='Taxi driver'
+void Database::CreateTableIFNotExists(sqlite3 *db) {
+
+  string sql = "CREATE TABLE IF NOT EXISTS Filmas("  \
+      "id INTEGER PRIMARY KEY AUTOINCREMENT," \
+      "pavadinimas           TEXT    NOT NULL," \
+      "zanras            TEXT     NOT NULL," \
+        "metai            INT     NOT NULL," \
+      "reitingas        REAL );";
+
+  int rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr);
+
+  if (rc == SQLITE_OK) {
+    cout << "Database table created!!!" << endl;
+  } else {
+    cout << "Failed to execute or table already exists!" << sqlite3_errmsg(db) << endl;
+  }
+
+  sqlite3_close(db);
+}

@@ -10,18 +10,26 @@ using namespace std;
 class Filmas {
 
 private: // private naudojama ir pasiekiama tik Filmas klaseje
-  string pavadinimas;
+ string pavadinimas;
   string zanras;
   int metai;
   double reitingas;
+  int id;
 
 public: // public laukai ir metodai matomi visur arba yra viesi
-  Filmas(string pav, string zan, int met, double reit);
 
+
+  Filmas(const string &pavadinimas, const string &zanras, int metai, double reitingas, int id);
+
+  Filmas(const string &pavadinimas, const string &zanras, int metai, double reitingas);
 
   const string &GetPavadinimas() const;
 
   const string &GetZanras() const;
+
+  int GetId() const;
+
+
 
   int GetMetai() const;
 

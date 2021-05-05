@@ -5,12 +5,6 @@
 #include "Filmas.h"
 
 
-Filmas::Filmas(string pav, string zan, int met, double reit) {
-  pavadinimas = pav;
-  zanras = zan;
-  metai = met;
-  reitingas = reit;
-}
 void Filmas::SpausdintiFilmoAprasyma() const{
   cout << "Filmo pavadinimas: " << pavadinimas << endl;
   cout << "Zanras: " << zanras << endl;
@@ -23,13 +17,6 @@ void Filmas::KeistiReitinga(double skaicius){
   reitingas = skaicius;
 }
 
-const string &Filmas::GetPavadinimas() const {
-  return pavadinimas;
-}
-
-const string &Filmas::GetZanras() const {
-  return zanras;
-}
 
 int Filmas::GetMetai() const {
   return metai;
@@ -38,3 +25,27 @@ int Filmas::GetMetai() const {
 double Filmas::GetReitingas() const {
   return reitingas;
 }
+
+int Filmas::GetId() const {
+  return id;
+}
+
+Filmas::Filmas(const string &pavadinimas, const string &zanras, int metai, double reitingas, int id) : pavadinimas(
+    pavadinimas), zanras(zanras), metai(metai), reitingas(reitingas), id(id) {}
+
+const string &Filmas::GetPavadinimas() const {
+  return pavadinimas;
+}
+
+const string &Filmas::GetZanras() const {
+  return zanras;
+}
+
+Filmas::Filmas(const string &pavadinimas, const string &zanras, int metai, double reitingas) : pavadinimas(pavadinimas),
+                                                                                               zanras(zanras),
+                                                                                               metai(metai),
+                                                                                               reitingas(reitingas) {}
+
+
+
+
